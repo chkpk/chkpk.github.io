@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html>
+    <head>
+        <title>3D Topo Layout</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta http-equiv="pragma" content="no-cache">
+    
+        <script id="node-shader-fs" type="x-shader/x-fragment">
+
+            precision mediump float;
+            
+            uniform sampler2D uSampler;
+            varying float aLinks;
+            
+            void main(void) {
+                gl_FragColor = texture2D(uSampler, gl_PointCoord);
+                /*
+                if (aLinks > 1000.0) {
+                    gl_FragColor.x = 1.0;
+                    gl_FragColor.y = 0.0;
+                    gl_FragColor.z = 0.0;
+                }else if ( aLinks > 100.0){
+                    gl_FragColor.x = 0.0;
+                    gl_FragColor.y = 1.0;
+                    gl_FragColor.z = 0.0;
+                }else if ( aLinks > 10.0){
+                    gl_FragColor.x = 1.0;
+                    gl_FragColor.y = 1.0;
+                    gl_FragColor.z = 0.0;
+                }*/
+                //gl_FragColor.w = gl_FragColor.w * (aLinks*0.0002 + 0.3);
+                ;
+                gl_FragColor.x = 0.0;
+                gl_FragColor.y = 0.0;//0.5 - 0.5 * aLinks;
+                gl_FragColor.z = 1.0;// * (0.7 + aLinks* 0.3);
+                gl_FragColor.w = gl_FragColor.w * (0.7 + aLinks* 0.3);  
+            }
+        </script>
+
+        <script id="node-shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+
+            attribute float aVertexSize;
+            varying float aLinks;
+
+            uniform mat4 uMVMatrix;
+            uniform mat4 uPMatrix;
+            
+            void main(void) {
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                gl_PointSize = 0.8 * (1.0 + aVertexSize * 6.0);
+                aLinks = aVertexSize;
+            }
+        </script>
+
+        <script id="line-shader-fs" type="x-shader/x-fragment">
+
+            precision mediump float;
+
+            void main(void) {
+                //gl_FragColor = vec4(0.0,0.0,0.0,0.3);
+               gl_FragColor = vec4(1.0,1.0,1.0,0.05);
+            }
+            
+        </script>
+
+        <script id="line-shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+
+            uniform mat4 uMVMatrix;
+            uniform mat4 uPMatrix;
+            
+            void main(void) {
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            }
+        </script>
+
+        <script id="headlight-shader-fs" type="x-shader/x-fragment">
+
+            precision mediump float;
+
+            varying vec4 vColor;
+            
+            void main(void) {
+               gl_FragColor = vColor;
+            }
+            
+        </script>
+
+        <script id="headlight-shader-vs" type="x-shader/x-vertex">
+            attribute vec3 aVertexPosition;
+
+            attribute vec4 aVertexColor;
+            
+            uniform mat4 uMVMatrix;
+            uniform mat4 uPMatrix;
+
+            varying vec4 vColor;
+
+            void main(void) {
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                vColor = aVertexColor;
+            }
+        </script>
+    
+    </head>
+    
+    <body>
+        <div id="main">
+          <img src='images/loading.gif' class="loading">
+        </div>
+        <div>
+            <canvas id = "can" width = "900" height = "550" onContextMenu = "return false"> </canvas>
+            <canvas id  = "text" width = "900" height = "550" onContextMenu = "return false"> </canvas>
+        </div>
+        <!--div id="colorSelector"><div style="background-color: #0000ff"></div--></div>
+
+        <script type="text/javascript" src="js/twaver.js"></script>
+        <script type="text/javascript" src="js/jquery.js"></script>
+        <script type="text/javascript" src="js/bgp.js"></script>
+        <script type="text/javascript" src="js/util.js"></script>   
+        <script type="text/javascript" src="js/Oak3D_v_0_5_4.js"></script>
+        <script type="text/javascript" src="js/3d.js"></script>
+        <script type="text/javascript" src="js/ajaxdata_new.js"></script>
+        <link rel="stylesheet" type="text/css" href="css/layout.css" />
+        
+        <script type="text/javascript">
+          $(document).ready(function(){
+            time00 = new Date().getTime();
+            console.log("document ready: "+(new Date().getTime()-time00)/1000+'s');
+            b = new bgp.Bgp();
+            b.registerImages();
+            
+            setTimeout(function(){
+                time1 =  new Date().getTime();
+              //$.getJSON("view_as_topo2.php" + location.search, function(data){
+                data = ajaxdata;
+                $("#main").children().remove();
+                
+                //for (key in data["time"])
+                //    console.log(key + ": " + data["time"][key] + "s");
+                //console.log("ajax_data: "+(new Date().getTime()-time1)/1000+'s');
+                
+                b.init();
+                webGLStart();
+                time2 =  new Date().getTime();
+                //console.log(JSON.stringify(data));
+                readEdgeFromServer(data);
+
+                var timel = new Date().getTime();
+                initBuffers();
+                loadBuffer();
+                console.log("init & load buffer time: "+(new Date().getTime()-timel)/1000+'s');
+                
+                setTimeout(function(){
+                    b.initMouseEvent();
+                    b.initInfo();
+                    tick();
+                    console.log("webGL showdata: "+(new Date().getTime()-time2)/1000+'s');
+                    console.log("total: "+(new Date().getTime()-time00)/1000+'s');
+                },100);
+                
+
+             // });
+            }, 50);
+          });
+        </script>
+        
+        <!--script type="text/javascript">
+        cs = $('#colorSelector');
+        csd = $('#colorSelector div');
+        cs.hide();
+        
+        $('#colorSelector').ColorPicker({
+            color: '#0000ff',
+            onShow: function (colpkr) {
+                $(colpkr).fadeIn(500);      
+                return false;
+            },
+            onHide: function (colpkr) {
+                $(colpkr).fadeOut(500);                     
+                return false;
+            },
+            onChange: function (hsb, hex, rgb) {
+                $('#colorSelector div').css('backgroundColor', '#' + hex);
+                vColors[b.combo.value] = [rgb.r/256.0,rgb.g/256.0,rgb.b/256.0,alpha];
+                sColors[b.combo.value] = '#' + hex;
+                console.log(vColors[b.combo.value]);
+                console.log(sColors[b.combo.value]);
+            }
+        });
+        </script-->
+    </body>
+</html>
