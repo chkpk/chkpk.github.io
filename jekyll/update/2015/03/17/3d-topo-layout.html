@@ -6,12 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>记录</title>
-  <meta name="description" content="我的记录。Thanks github.
-">
+  <title>3d topo layout</title>
+  <meta name="description" content="已知无向连通拓图（G,E)，给G的每个元素计算出一个3维坐标，达到以下目标：">
 
   <link rel="stylesheet" href="/site/css/main.css">
-  <link rel="canonical" href="http://chkpk.github.io/site/">
+  <link rel="canonical" href="http://chkpk.github.io/site/jekyll/update/2015/03/17/3d-topo-layout.html">
   <link rel="alternate" type="application/rss+xml" title="记录" href="http://chkpk.github.io/site/feed.xml" />
 </head>
 
@@ -55,29 +54,50 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <div class="post">
 
-  <h1 class="page-heading">Posts</h1>
+  <header class="post-header">
+    <h1 class="post-title">3d topo layout</h1>
+    <p class="post-meta">Mar 17, 2015</p>
+  </header>
 
-  <ul class="post-list">
-    
-    <li>
-    <span class="post-meta">Mar 17, 2015</span>
-      <h2>
-        <a class="post-link" href="/site/jekyll/update/2015/03/17/welcome-to-jekyll.html">Welcome to Jekyll!</a>
-      </h2>
-    </li>
-    
-    <li>
-    <span class="post-meta">Mar 17, 2015</span>
-      <h2>
-        <a class="post-link" href="/site/jekyll/update/2015/03/17/3d-topo-layout.html">3d topo layout</a>
-      </h2>
-    </li>
-    
-  </ul>
+  <article class="post-content">
+    <p>已知无向连通拓图（G,E)，给G的每个元素计算出一个3维坐标，达到以下目标：</p>
 
-  <!--p class="rss-subscribe">subscribe <a href="/site/feed.xml">via RSS</a></--p>
+<ol>
+  <li>有无向边连接的节点在3维空间中尽量靠近</li>
+  <li>所有节点在空间中分布尽量均匀</li>
+</ol>
+
+<p>大部分算法是基于重力-引力模型，通过不断迭代得到每个节点的坐标。最大问题是迭代时间长。</p>
+
+<p>看了很多文献，有一个算法比较特别，时间复杂度可认为是<code>O(n)</code>.
+详见 <a href="http://www.emis.de/journals/JGAA/accepted/2004/HarelKoren2004.8.2.pdf">《Graph Drawing by High-Dimensional Embedding》</a></p>
+
+<p>算法整体描述：</p>
+
+<ol>
+  <li>在G中选出若干节点，称“核心节点”，其集合为“核心节点集合”，记为C，设C的大小为N</li>
+  <li>对每个核心节点，以之为根，广度优先遍历G，得到G中每个节点到各个核心节点的跳数（共N个），组成该节点的N维空间坐标向量</li>
+  <li>运用主成分分析法（PCA）将每个节点的坐标向量从N维降为3维，得到每个节点的3维坐标</li>
+</ol>
+
+<p>坐标节点的选取：</p>
+
+<ol>
+  <li>选取连接数最多的节点u1作为第1个核心节点，加入C</li>
+  <li>对G-C中的节点u，定义u到C的距离为u到C中已有节点的距离的最小值</li>
+  <li>将当前G-C中与C距离最远的节点作为下一个核心节点加入C，更新G-C所有节点到C的距离</li>
+  <li>将3重复N-1次，一共得到N个核心节点. N大小取50足够.</li>
+</ol>
+
+<p>主成分分析法降维过程中也用了迭代，不过经实际运行发现迭代次数较少。</p>
+
+<p>算法实现起来不难， C代码大概400行。 上万节点的拓扑图，运行时间基本在5秒以内。
+效果见<a href="http://chkpk.github.io/3d_topo_layout">3d_topo_layout_demo</a>。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。</p>
+
+
+  </article>
 
 </div>
 
