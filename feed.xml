@@ -6,8 +6,8 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 19 Mar 2015 16:47:29 +0800</pubDate>
-    <lastBuildDate>Thu, 19 Mar 2015 16:47:29 +0800</lastBuildDate>
+    <pubDate>Thu, 19 Mar 2015 21:34:23 +0800</pubDate>
+    <lastBuildDate>Thu, 19 Mar 2015 21:34:23 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -134,7 +134,7 @@
 &lt;ul&gt;
   &lt;li&gt;mutex : 使用 &lt;code&gt;pthread_mutex_lock / pthread_mutex_unlock&lt;/code&gt;&lt;/li&gt;
   &lt;li&gt;spin1 : 使用 &lt;code&gt;pthread_spin_lock / pthread_spin_unlock&lt;/code&gt;&lt;/li&gt;
-  &lt;li&gt;spin2 : 使用 &lt;code&gt;__sync_test_and_set&lt;/code&gt;, 对应&lt;a href=&quot;https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c&quot;&gt;skynet_mq.c&lt;/a&gt;,自旋锁另一种实现形式&lt;/li&gt;
+  &lt;li&gt;spin2 : 使用 &lt;code&gt;__sync_lock_test_and_set / __sync_lock_release&lt;/code&gt;, 对应&lt;a href=&quot;https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c&quot;&gt;skynet_mq.c&lt;/a&gt;,自旋锁另一种实现形式&lt;/li&gt;
   &lt;li&gt;cas : 使用 &lt;code&gt;__sync_bool_compare_and_swap&lt;/code&gt;, 对应原文的q3_new.h&lt;/li&gt;
   &lt;li&gt;mixed1 : 混合使用 &lt;code&gt;__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield&lt;/code&gt;, 对应原文的spin2_push/spin2_pop&lt;/li&gt;
   &lt;li&gt;mixed2 : 改写自mixed1，有所简化。&lt;/li&gt;
@@ -169,6 +169,20 @@
 &lt;ul&gt;
   &lt;li&gt;线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。&lt;/li&gt;
   &lt;li&gt;竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;结论&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;mutex适应性最强，而且性能也不差,所以优先考虑用mutex,起码代码简单、可读性高&lt;/li&gt;
+  &lt;li&gt;性能瓶颈真的在mutex时,再考虑用无锁或者其他锁来优化,但要意识到，优化的空间是有限的,可能更好的办法是改架构。&lt;/li&gt;
+  &lt;li&gt;无锁队列没有想象中那么美…&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;待进一步研究&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;降低锁的粒度,分为读锁、写锁&lt;/li&gt;
 &lt;/ul&gt;
 
 </description>

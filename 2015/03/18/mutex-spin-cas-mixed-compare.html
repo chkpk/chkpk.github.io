@@ -184,7 +184,7 @@
 <ul>
   <li>mutex : 使用 <code>pthread_mutex_lock / pthread_mutex_unlock</code></li>
   <li>spin1 : 使用 <code>pthread_spin_lock / pthread_spin_unlock</code></li>
-  <li>spin2 : 使用 <code>__sync_test_and_set</code>, 对应<a href="https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c">skynet_mq.c</a>,自旋锁另一种实现形式</li>
+  <li>spin2 : 使用 <code>__sync_lock_test_and_set / __sync_lock_release</code>, 对应<a href="https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c">skynet_mq.c</a>,自旋锁另一种实现形式</li>
   <li>cas : 使用 <code>__sync_bool_compare_and_swap</code>, 对应原文的q3_new.h</li>
   <li>mixed1 : 混合使用 <code>__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield</code>, 对应原文的spin2_push/spin2_pop</li>
   <li>mixed2 : 改写自mixed1，有所简化。</li>
@@ -219,6 +219,20 @@
 <ul>
   <li>线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。</li>
   <li>竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。</li>
+</ul>
+
+<p><strong>结论</strong>:</p>
+
+<ul>
+  <li>mutex适应性最强，而且性能也不差,所以优先考虑用mutex,起码代码简单、可读性高</li>
+  <li>性能瓶颈真的在mutex时,再考虑用无锁或者其他锁来优化,但要意识到，优化的空间是有限的,可能更好的办法是改架构。</li>
+  <li>无锁队列没有想象中那么美…</li>
+</ul>
+
+<p><strong>待进一步研究</strong></p>
+
+<ul>
+  <li>降低锁的粒度,分为读锁、写锁</li>
 </ul>
 
 
