@@ -6,9 +6,184 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 17 Mar 2015 16:53:05 +0800</pubDate>
-    <lastBuildDate>Tue, 17 Mar 2015 16:53:05 +0800</lastBuildDate>
+    <pubDate>Thu, 19 Mar 2015 16:47:29 +0800</pubDate>
+    <lastBuildDate>Thu, 19 Mar 2015 16:47:29 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>mutex,spinlock,cas performance</title>
+        <description>&lt;p&gt;&lt;a href=&quot;http://www.cnblogs.com/shines77/p/4200127.html&quot;&gt;《一个无锁消息队列引发的血案》&lt;/a&gt; 提到了多个版本的线程安全的RingQueue, 我把&lt;a href=&quot;https://github.com/shines77/RingQueue-utf8&quot;&gt;原作者放在github上的代码&lt;/a&gt;整理了下， 写了一个&lt;a href=&quot;https://github.com/chkpk/RingQueue/blob/master/RingQueue.h&quot;&gt;单文件版本&lt;/a&gt; (有所简化，只支持linux)，先上测试结果(&lt;a href=&quot;https://github.com/chkpk/RingQueue/blob/master/main.cpp&quot;&gt;测试代码&lt;/a&gt;)：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;nThread&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;mutex&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;spin1&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;spin2&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;cas&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;mixed1&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;mixed2&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;1&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3680&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4158&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2444&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2590&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;365&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;461&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4469&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4589&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3604&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3022&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;398&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;432&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3523&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;5437&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4764&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;3742&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;391&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;410&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2845&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;5600&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;5952&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;5574&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;399&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;402&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;5&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2600&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;7108&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;7562&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;38151&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;394&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;401&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;6&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2626&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;7950&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;9243&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;Na&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;418&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;408&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;7&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2593&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;9206&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;10671&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;Na&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;413&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;415&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;8&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2576&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;10320&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;12608&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;Na&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;408&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;428&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;9&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2611&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;11225&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;14091&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;Na&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;404&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;420&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;10&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;2618&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;12143&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;15835&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;Na&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;407&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;428&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;每次测试的push/pop总次数为10000000, 记录完成的时间,时间单位为ms。运行6次,取平均值。&lt;/li&gt;
+  &lt;li&gt;测试环境： CentOS 6.6 (64bit), Kernel 2.6.32,  CPU: Inter(R) Xeon E5606 @ 2.13GHz(8核), Memory 8G。&lt;/li&gt;
+  &lt;li&gt;编译器版本 4.9.1, O3 优化。&lt;/li&gt;
+  &lt;li&gt;横轴nThread=消费者数目=生产者数目。 Na表示运行时间太长，没有计入比较。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/lock_compare.jpg&quot; alt=&quot;性能对比图&quot; title=&quot;对比图&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;各种同步实现方式&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;mutex : 使用 &lt;code&gt;pthread_mutex_lock / pthread_mutex_unlock&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;spin1 : 使用 &lt;code&gt;pthread_spin_lock / pthread_spin_unlock&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;spin2 : 使用 &lt;code&gt;__sync_test_and_set&lt;/code&gt;, 对应&lt;a href=&quot;https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c&quot;&gt;skynet_mq.c&lt;/a&gt;,自旋锁另一种实现形式&lt;/li&gt;
+  &lt;li&gt;cas : 使用 &lt;code&gt;__sync_bool_compare_and_swap&lt;/code&gt;, 对应原文的q3_new.h&lt;/li&gt;
+  &lt;li&gt;mixed1 : 混合使用 &lt;code&gt;__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield&lt;/code&gt;, 对应原文的spin2_push/spin2_pop&lt;/li&gt;
+  &lt;li&gt;mixed2 : 改写自mixed1，有所简化。&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code&gt;具体代码见[RingQueue.h][ringqueue]&lt;/code&gt;&lt;/strong&gt;;&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mutex是最常用的线程间同步方法，一般认为拿不到锁就睡眠(实际似乎并非如此?）&lt;/li&gt;
+  &lt;li&gt;spin1/spin1都是自旋锁,cas实现了所谓的&lt;code&gt;&quot;无锁队列&quot;&lt;/code&gt;,三者在拿不到锁时都死等。区别在于 cas是乐观锁。&lt;/li&gt;
+  &lt;li&gt;mixed1/mixed2 拿不到锁时先自旋一段时间，还拿不到就退让,直到获取锁。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;测试结果&lt;/strong&gt;：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;当竞争不激烈（总线程数小于等于主机核心数)时，mutex、自旋锁、cas的性能相差不大&lt;/li&gt;
+  &lt;li&gt;当总线程数大于主机核心数时，cas性能迅速恶化;两种自旋锁性能基本一样，随线程数增多而逐渐变差; mutex较稳定,&lt;/li&gt;
+  &lt;li&gt;两个混合型的mixed1和mixed2性能相近，至少是mutex的3倍,而且一直很稳定;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;对测试结果的分析与猜测&lt;/strong&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;cas性能迅速恶化：随线程数增加，cas冲突越来越激烈，尤其在并发线程数大于核数的时候.cas更容易在以下两处代码执行前或者执行过程中被抢占或者被休眠，导致其它线程因为 write_finish_以及read_finished_更新不及时而则停在这个while循环内(经测试while循环次数大幅增加)：&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;write_finish_&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;head&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;_mm_pause&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-cpp&quot; data-lang=&quot;cpp&quot;&gt;&lt;span class=&quot;k&quot;&gt;while&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;read_finish_&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tail&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;_mm_pause&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。&lt;/li&gt;
+  &lt;li&gt;竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Wed, 18 Mar 2015 00:00:00 +0800</pubDate>
+        <link>http://chkpk.github.io/2015/03/18/mutex-spin-cas-mixed-compare.html</link>
+        <guid isPermaLink="true">http://chkpk.github.io/2015/03/18/mutex-spin-cas-mixed-compare.html</guid>
+        
+        <category>Algorithm</category>
+        
+        <category>Linux</category>
+        
+        <category>C/C++</category>
+        
+        
+      </item>
     
       <item>
         <title>Welcome to Jekyll!</title>
@@ -81,13 +256,15 @@
 
 </description>
         <pubDate>Tue, 17 Mar 2015 15:18:00 +0800</pubDate>
-        <link>http://chkpk.github.io/jekyll/update/2015/03/17/3d-topo-layout.html</link>
-        <guid isPermaLink="true">http://chkpk.github.io/jekyll/update/2015/03/17/3d-topo-layout.html</guid>
+        <link>http://chkpk.github.io/2015/03/17/3d-topo-layout.html</link>
+        <guid isPermaLink="true">http://chkpk.github.io/2015/03/17/3d-topo-layout.html</guid>
         
+        <category>Graphics</category>
         
-        <category>jekyll</category>
+        <category>Algorithm</category>
         
-        <category>update</category>
+        <category>WebGl</category>
+        
         
       </item>
     

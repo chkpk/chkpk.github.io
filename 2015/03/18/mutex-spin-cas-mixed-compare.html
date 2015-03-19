@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>mutex,spinlock,cas performance</title>
+  <meta name="description" content="《一个无锁消息队列引发的血案》 提到了多个版本的线程安全的RingQueue, 我把原作者放在github上的代码整理了下， 写了一个单文件版本 (有所简化，只支持linux)，先上测试结果(测试代码)：">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://chkpk.github.io/2015/03/18/mutex-spin-cas-mixed-compare.html">
+  <link rel="alternate" type="application/rss+xml" title="记录" href="http://chkpk.github.io/feed.xml" />
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">记录</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">mutex,spinlock,cas performance</h1>
+    <p class="post-meta">Mar 18, 2015</p>
+  </header>
+
+  <article class="post-content">
+    <p><a href="http://www.cnblogs.com/shines77/p/4200127.html">《一个无锁消息队列引发的血案》</a> 提到了多个版本的线程安全的RingQueue, 我把<a href="https://github.com/shines77/RingQueue-utf8">原作者放在github上的代码</a>整理了下， 写了一个<a href="https://github.com/chkpk/RingQueue/blob/master/RingQueue.h">单文件版本</a> (有所简化，只支持linux)，先上测试结果(<a href="https://github.com/chkpk/RingQueue/blob/master/main.cpp">测试代码</a>)：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">nThread</th>
+      <th style="text-align: center">mutex</th>
+      <th style="text-align: center">spin1</th>
+      <th style="text-align: center">spin2</th>
+      <th style="text-align: center">cas</th>
+      <th style="text-align: center">mixed1</th>
+      <th style="text-align: center">mixed2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">1</td>
+      <td style="text-align: center">3680</td>
+      <td style="text-align: center">4158</td>
+      <td style="text-align: center">2444</td>
+      <td style="text-align: center">2590</td>
+      <td style="text-align: center">365</td>
+      <td style="text-align: center">461</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">2</td>
+      <td style="text-align: center">4469</td>
+      <td style="text-align: center">4589</td>
+      <td style="text-align: center">3604</td>
+      <td style="text-align: center">3022</td>
+      <td style="text-align: center">398</td>
+      <td style="text-align: center">432</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">3</td>
+      <td style="text-align: center">3523</td>
+      <td style="text-align: center">5437</td>
+      <td style="text-align: center">4764</td>
+      <td style="text-align: center">3742</td>
+      <td style="text-align: center">391</td>
+      <td style="text-align: center">410</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">4</td>
+      <td style="text-align: center">2845</td>
+      <td style="text-align: center">5600</td>
+      <td style="text-align: center">5952</td>
+      <td style="text-align: center">5574</td>
+      <td style="text-align: center">399</td>
+      <td style="text-align: center">402</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">5</td>
+      <td style="text-align: center">2600</td>
+      <td style="text-align: center">7108</td>
+      <td style="text-align: center">7562</td>
+      <td style="text-align: center">38151</td>
+      <td style="text-align: center">394</td>
+      <td style="text-align: center">401</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">6</td>
+      <td style="text-align: center">2626</td>
+      <td style="text-align: center">7950</td>
+      <td style="text-align: center">9243</td>
+      <td style="text-align: center">Na</td>
+      <td style="text-align: center">418</td>
+      <td style="text-align: center">408</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">7</td>
+      <td style="text-align: center">2593</td>
+      <td style="text-align: center">9206</td>
+      <td style="text-align: center">10671</td>
+      <td style="text-align: center">Na</td>
+      <td style="text-align: center">413</td>
+      <td style="text-align: center">415</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">8</td>
+      <td style="text-align: center">2576</td>
+      <td style="text-align: center">10320</td>
+      <td style="text-align: center">12608</td>
+      <td style="text-align: center">Na</td>
+      <td style="text-align: center">408</td>
+      <td style="text-align: center">428</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">9</td>
+      <td style="text-align: center">2611</td>
+      <td style="text-align: center">11225</td>
+      <td style="text-align: center">14091</td>
+      <td style="text-align: center">Na</td>
+      <td style="text-align: center">404</td>
+      <td style="text-align: center">420</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">10</td>
+      <td style="text-align: center">2618</td>
+      <td style="text-align: center">12143</td>
+      <td style="text-align: center">15835</td>
+      <td style="text-align: center">Na</td>
+      <td style="text-align: center">407</td>
+      <td style="text-align: center">428</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>每次测试的push/pop总次数为10000000, 记录完成的时间,时间单位为ms。运行6次,取平均值。</li>
+  <li>测试环境： CentOS 6.6 (64bit), Kernel 2.6.32,  CPU: Inter(R) Xeon E5606 @ 2.13GHz(8核), Memory 8G。</li>
+  <li>编译器版本 4.9.1, O3 优化。</li>
+  <li>横轴nThread=消费者数目=生产者数目。 Na表示运行时间太长，没有计入比较。</li>
+</ul>
+
+<p><img src="/images/lock_compare.jpg" alt="性能对比图" title="对比图" /></p>
+
+<p><strong>各种同步实现方式</strong>:</p>
+
+<ul>
+  <li>mutex : 使用 <code>pthread_mutex_lock / pthread_mutex_unlock</code></li>
+  <li>spin1 : 使用 <code>pthread_spin_lock / pthread_spin_unlock</code></li>
+  <li>spin2 : 使用 <code>__sync_test_and_set</code>, 对应<a href="https://github.com/cloudwu/skynet/blob/master/skynet-src/skynet_mq.c">skynet_mq.c</a>,自旋锁另一种实现形式</li>
+  <li>cas : 使用 <code>__sync_bool_compare_and_swap</code>, 对应原文的q3_new.h</li>
+  <li>mixed1 : 混合使用 <code>__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield</code>, 对应原文的spin2_push/spin2_pop</li>
+  <li>mixed2 : 改写自mixed1，有所简化。</li>
+  <li>
+    <p><strong><code>具体代码见[RingQueue.h][ringqueue]</code></strong>;</p>
+  </li>
+  <li>mutex是最常用的线程间同步方法，一般认为拿不到锁就睡眠(实际似乎并非如此?）</li>
+  <li>spin1/spin1都是自旋锁,cas实现了所谓的<code>"无锁队列"</code>,三者在拿不到锁时都死等。区别在于 cas是乐观锁。</li>
+  <li>mixed1/mixed2 拿不到锁时先自旋一段时间，还拿不到就退让,直到获取锁。</li>
+</ul>
+
+<p><strong>测试结果</strong>：</p>
+
+<ul>
+  <li>当竞争不激烈（总线程数小于等于主机核心数)时，mutex、自旋锁、cas的性能相差不大</li>
+  <li>当总线程数大于主机核心数时，cas性能迅速恶化;两种自旋锁性能基本一样，随线程数增多而逐渐变差; mutex较稳定,</li>
+  <li>两个混合型的mixed1和mixed2性能相近，至少是mutex的3倍,而且一直很稳定;</li>
+</ul>
+
+<p><strong>对测试结果的分析与猜测</strong>:</p>
+
+<ul>
+  <li>cas性能迅速恶化：随线程数增加，cas冲突越来越激烈，尤其在并发线程数大于核数的时候.cas更容易在以下两处代码执行前或者执行过程中被抢占或者被休眠，导致其它线程因为 write_finish_以及read_finished_更新不及时而则停在这个while循环内(经测试while循环次数大幅增加)：</li>
+</ul>
+
+<div class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">while</span><span class="p">(</span><span class="n">write_finish_</span> <span class="o">!=</span> <span class="n">head</span><span class="p">)</span>
+  <span class="n">_mm_pause</span><span class="p">();</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">while</span><span class="p">(</span><span class="n">read_finish_</span> <span class="o">!=</span> <span class="n">tail</span><span class="p">)</span>
+  <span class="n">_mm_pause</span><span class="p">();</span></code></pre></div>
+
+<ul>
+  <li>线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。</li>
+  <li>竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。</li>
+</ul>
+
+
+  </article>
+
+</div>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">记录</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col  footer-col-1">
+        <ul class="contact-list">
+          <li>记录</li>
+          <li><a href="mailto:chenkai0063@126.com">chenkai0063@126.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/chkpk">
+              <span class="icon  icon--github">
+                <svg viewBox="0 0 16 16">
+                  <path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+                </svg>
+              </span>
+
+              <span class="username">chkpk</span>
+            </a>
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col  footer-col-3">
+        <p class="text">我的记录。Thanks github.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
