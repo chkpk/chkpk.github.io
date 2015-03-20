@@ -218,7 +218,7 @@
 
 <ul>
   <li>线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。</li>
-  <li>竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。</li>
+  <li>竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutex), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。详见<a href="http://www.searchtb.com/2011/01/pthreads-mutex-vs-pthread-spinlock.html">pthreads-mutex-vs-pthread-spinlock</a>。</li>
 </ul>
 
 <p><strong>结论</strong>:</p>

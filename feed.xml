@@ -6,8 +6,8 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 19 Mar 2015 21:34:23 +0800</pubDate>
-    <lastBuildDate>Thu, 19 Mar 2015 21:34:23 +0800</lastBuildDate>
+    <pubDate>Fri, 20 Mar 2015 19:26:25 +0800</pubDate>
+    <lastBuildDate>Fri, 20 Mar 2015 19:26:25 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -168,7 +168,7 @@
 
 &lt;ul&gt;
   &lt;li&gt;线程数大于核数时，由于mixed1和mixed2有sched_yield()/nanosleep()机制,会在前面自旋若干次数之后，主动放弃CPU进行退让，获取了较好的实际性能。&lt;/li&gt;
-  &lt;li&gt;竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutexr), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。&lt;/li&gt;
+  &lt;li&gt;竞争不激烈时，spin性能按理应该比mutex性能好(spin上下文切换少)，但测试结果却相反。原来在较新的mutex实现中，使用了futex(fast userspace mutex), 其策略也是先在用户空间自旋，一段时间后仍未获取锁才由系统仲裁。详见&lt;a href=&quot;http://www.searchtb.com/2011/01/pthreads-mutex-vs-pthread-spinlock.html&quot;&gt;pthreads-mutex-vs-pthread-spinlock&lt;/a&gt;。&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;&lt;strong&gt;结论&lt;/strong&gt;:&lt;/p&gt;
@@ -266,7 +266,7 @@
 &lt;p&gt;主成分分析法降维过程中也用了迭代，不过经实际运行发现迭代次数较少。&lt;/p&gt;
 
 &lt;p&gt;算法实现起来不难， C代码大概400行。 上万节点的拓扑图，运行时间基本在5秒以内。
-效果见&lt;a href=&quot;http://chkpk.github.io/3d_topo_layout&quot;&gt;3d_topo_layout_demo&lt;/a&gt;。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。&lt;/p&gt;
+效果见&lt;a href=&quot;/3d_topo_layout/3d_topo_layout_demo.html&quot;&gt;3d_topo_layout_demo&lt;/a&gt;。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。&lt;/p&gt;
 
 </description>
         <pubDate>Tue, 17 Mar 2015 15:18:00 +0800</pubDate>
