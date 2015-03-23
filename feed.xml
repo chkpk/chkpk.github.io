@@ -6,9 +6,106 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 20 Mar 2015 19:26:25 +0800</pubDate>
-    <lastBuildDate>Fri, 20 Mar 2015 19:26:25 +0800</lastBuildDate>
+    <pubDate>Tue, 24 Mar 2015 00:33:41 +0800</pubDate>
+    <lastBuildDate>Tue, 24 Mar 2015 00:33:41 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>mysql_store_result vs mysql_use_result</title>
+        <description>&lt;p&gt;在使用&lt;code&gt;mysql_query&lt;/code&gt;进行查询之后,必须调用 &lt;code&gt;mysql_store_result&lt;/code&gt;或者&lt;code&gt;mysql_use_result&lt;/code&gt;获取结果。
+前者立即将剩余所有查询结果取回(可能会阻塞），后者不产生任何网络IO，从不阻塞,剩余查询结果将在后面&lt;code&gt;mysql_fetch_row&lt;/code&gt;需要时返回。
+事实上除非查询结果集很大（实测约大于160k）,否则基本在&lt;code&gt;musql_query&lt;/code&gt;执行完之后已经全部返回了（&lt;code&gt;仍在系统的socket缓冲区，等待mysql_store_result 取走&lt;/code&gt;）。&lt;/p&gt;
+
+&lt;p&gt;wireshark抓包结果：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;mysql_store_result&lt;/code&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;mysql_real_connect():
+    &lt;ul&gt;
+      &lt;li&gt;建立TCP连接&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Server Greating&lt;/li&gt;
+      &lt;li&gt;client -&amp;gt; server : Login Request&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response OK&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_query() :
+    &lt;ul&gt;
+      &lt;li&gt;client -&amp;gt; server : Request Query&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  //包含部分查询的结果&lt;/li&gt;
+      &lt;li&gt;client -&amp;gt; server : TCP zero-window // 客户端接收缓存已满&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_store_result():  //可能阻塞
+    &lt;ul&gt;
+      &lt;li&gt;client -&amp;gt; server : non-zero-window  //立即取走缓冲区数据，tcp连接的window恢复为非零&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  //包含所有剩余查询的结果(如果还有的话）&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_fetch_now(): // 非阻塞
+    &lt;ul&gt;
+      &lt;li&gt;无。&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;musql_close():
+    &lt;ul&gt;
+      &lt;li&gt;client -&amp;gt; server : Request Quit&lt;/li&gt;
+      &lt;li&gt;tcp断开&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code&gt;mysql_use_result&lt;/code&gt;:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;mysql_real_connect():
+    &lt;ul&gt;
+      &lt;li&gt;建立TCP连接&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Server Greating&lt;/li&gt;
+      &lt;li&gt;client -&amp;gt; server : Login Request&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response OK&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_query() :
+    &lt;ul&gt;
+      &lt;li&gt;client -&amp;gt; server : Request Query&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  //包含部分查询的结果&lt;/li&gt;
+      &lt;li&gt;client -&amp;gt; server : TCP zero-window&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_use_result():// 非阻塞
+    &lt;ul&gt;
+      &lt;li&gt;无。&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;mysql_fetch_now(): // 可能阻塞
+    &lt;ul&gt;
+      &lt;li&gt;一开始fetch处理 mysql_query 返回的结果，此时无网络IO，之后：&lt;/li&gt;
+      &lt;li&gt;client -&amp;gt; server : non-zero-window  //client取走缓冲区数据，tcp连接的window恢复为非零&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  //包含所有剩余查询的结果(如果还有的话）&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;musql_close():
+    &lt;ul&gt;
+      &lt;li&gt;client -&amp;gt; server : Request Quit&lt;/li&gt;
+      &lt;li&gt;tcp断开&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Mon, 23 Mar 2015 00:00:00 +0800</pubDate>
+        <link>http://chkpk.github.io/2015/03/23/mysql_use_result-vs-mysql_store_result.html</link>
+        <guid isPermaLink="true">http://chkpk.github.io/2015/03/23/mysql_use_result-vs-mysql_store_result.html</guid>
+        
+        <category>Database</category>
+        
+        <category>Mysql</category>
+        
+        <category>C/C++</category>
+        
+        
+      </item>
     
       <item>
         <title>mutex,spinlock,cas performance</title>
@@ -139,7 +236,7 @@
   &lt;li&gt;mixed1 : 混合使用 &lt;code&gt;__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield&lt;/code&gt;, 对应原文的spin2_push/spin2_pop&lt;/li&gt;
   &lt;li&gt;mixed2 : 改写自mixed1，有所简化。&lt;/li&gt;
   &lt;li&gt;
-    &lt;p&gt;&lt;strong&gt;&lt;code&gt;具体代码见[RingQueue.h][ringqueue]&lt;/code&gt;&lt;/strong&gt;;&lt;/p&gt;
+    &lt;p&gt;&lt;strong&gt;&lt;code&gt;具体代码见&lt;/code&gt;&lt;/strong&gt;&lt;a href=&quot;https://github.com/chkpk/RingQueue/blob/master/RingQueue.h&quot;&gt;RingQueue.h&lt;/a&gt;_;&lt;/p&gt;
   &lt;/li&gt;
   &lt;li&gt;mutex是最常用的线程间同步方法，一般认为拿不到锁就睡眠(实际似乎并非如此?）&lt;/li&gt;
   &lt;li&gt;spin1/spin1都是自旋锁,cas实现了所谓的&lt;code&gt;&quot;无锁队列&quot;&lt;/code&gt;,三者在拿不到锁时都死等。区别在于 cas是乐观锁。&lt;/li&gt;

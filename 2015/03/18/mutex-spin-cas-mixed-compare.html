@@ -189,7 +189,7 @@
   <li>mixed1 : 混合使用 <code>__sync_bool_compare_and_swqp / __mm_pause / sleep / sched_yield</code>, 对应原文的spin2_push/spin2_pop</li>
   <li>mixed2 : 改写自mixed1，有所简化。</li>
   <li>
-    <p><strong><code>具体代码见[RingQueue.h][ringqueue]</code></strong>;</p>
+    <p><strong><code>具体代码见</code></strong><a href="https://github.com/chkpk/RingQueue/blob/master/RingQueue.h">RingQueue.h</a>_;</p>
   </li>
   <li>mutex是最常用的线程间同步方法，一般认为拿不到锁就睡眠(实际似乎并非如此?）</li>
   <li>spin1/spin1都是自旋锁,cas实现了所谓的<code>"无锁队列"</code>,三者在拿不到锁时都死等。区别在于 cas是乐观锁。</li>
