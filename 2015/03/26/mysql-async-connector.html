@@ -64,15 +64,14 @@
   <article class="post-content">
     <p>所做的项目有个需求，有一个线程接收Udp请求然后向mysql的一个表插入一行记录.由于不希望该功能过多占用CPU，因此只用一个线程。
 一开始用mysql-connector-c++作为客户端，由于只有单线程，插入速度不如人意。
-主要是原因是网络延迟太大，线程大部分时间阻塞在等待数据库返回数据，于是考虑用异步的方式访问数据库。
-目前mysql官方只有C#版本的connector有async操作的支持, mysql-connector-c/c++ 都没有提供异步操作的API.<br />
+主要是原因是网络延迟太大，线程大部分时间阻塞在等待数据库返回数据，于是考虑用异步的方式访问数据库。</p>
+
+<p>目前mysql官方只有C#版本的connector有async操作的支持, mysql-connector-c/c++ 都没有提供异步操作的API.
 但mariadb-connector-c提供了<code>兼容mysql</code>的<a href="https://mariadb.com/kb/en/mariadb/non-blocking-client-library/">non-block API</a>。
-(该网页说mysql-connector-c早就支持non-blocking,但没看出来怎么用，也找不到任何示例..)。</p>
+(该网页提到mysql-connector-c早就支持non-blocking,但没看出来怎么用，也找不到任何示例..)。</p>
 
 <p>mariadb提供了一个使用<a href="https://github.com/MariaDB/server/blob/10.1/tests/async_queries.c">异步API的demo</a>,里面结合了libevent,最主要的部分是异步操作状态机的实现，看着比较费解，
 我重新改写了，放在<a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c">这里</a>。</p>
-
-<p>PS：使用过程中发现mariadb-connect-c中，mysql连接关闭时没有清理使用异步mysql而额外申请的内存，顺便提了个pull request。</p>
 
 <p>以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 <a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c">blocking</a>,<a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c">non-blocking</a>):</p>
 
@@ -120,6 +119,8 @@
 <p>由于同一个连接无法同时处理两个查询，因此不管是阻塞还是非阻塞，连接数增加才有可能提高TPS。 
 回到我开始提到的项目需求来说，由于我只是插入记录，而且几乎不会有插入失败的情形，因此几乎不用维护上下文,可以使用这种异步的方式来操作数据库。</p>
 
+<p>使用过程中发现mariadb-connect-c中，mysql连接关闭时没有清理使用异步mysql而额外申请的内存，顺便提了个pull request。</p>
+
 
   </article>
 
@@ -163,7 +164,7 @@
       </div>
 
       <div class="footer-col  footer-col-3">
-        <p class="text">我的记录。Thanks github.
+        <p class="text">如有任何指正或疑问，欢迎联系我。 Thanks github.
 </p>
       </div>
     </div>
