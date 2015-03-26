@@ -6,9 +6,83 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 24 Mar 2015 00:33:41 +0800</pubDate>
-    <lastBuildDate>Tue, 24 Mar 2015 00:33:41 +0800</lastBuildDate>
+    <pubDate>Thu, 26 Mar 2015 22:33:44 +0800</pubDate>
+    <lastBuildDate>Thu, 26 Mar 2015 22:33:44 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>mysql async connector</title>
+        <description>&lt;p&gt;所做的项目有个需求，有一个线程接收Udp请求然后向mysql的一个表插入一行记录.由于不希望该功能过多占用CPU，因此只用一个线程。
+一开始用mysql-connector-c++作为客户端，由于只有单线程，插入速度不如人意。
+主要是原因是网络延迟太大，线程大部分时间阻塞在等待数据库返回数据，于是考虑用异步的方式访问数据库。
+目前mysql官方只有C#版本的connector有async操作的支持, mysql-connector-c/c++ 都没有提供异步操作的API.&lt;br /&gt;
+但mariadb-connector-c提供了&lt;code&gt;兼容mysql&lt;/code&gt;的&lt;a href=&quot;https://mariadb.com/kb/en/mariadb/non-blocking-client-library/&quot;&gt;non-block API&lt;/a&gt;。
+(该网页说mysql-connector-c早就支持non-blocking,但没看出来怎么用，也找不到任何示例..)。&lt;/p&gt;
+
+&lt;p&gt;mariadb提供了一个使用&lt;a href=&quot;https://github.com/MariaDB/server/blob/10.1/tests/async_queries.c&quot;&gt;异步API的demo&lt;/a&gt;,里面结合了libevent,最主要的部分是异步操作状态机的实现，看着比较费解，
+我重新改写了，放在&lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c&quot;&gt;这里&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;PS：使用过程中发现mariadb-connect-c中，mysql连接关闭时没有清理使用异步mysql而额外申请的内存，顺便提了个pull request。&lt;/p&gt;
+
+&lt;p&gt;以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 &lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c&quot;&gt;blocking&lt;/a&gt;,&lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c&quot;&gt;non-blocking&lt;/a&gt;):&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;记录数&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;阻塞式&lt;/th&gt;
+      &lt;th style=&quot;text-align: right&quot;&gt;非阻塞式&lt;/th&gt;
+      &lt;th style=&quot;text-align: center&quot;&gt;时间比&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;1&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0.031&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0.029&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;1.1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;100&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;3.011&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;0.624&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4.8&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;10000&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;328.636&lt;/td&gt;
+      &lt;td style=&quot;text-align: right&quot;&gt;67.098&lt;/td&gt;
+      &lt;td style=&quot;text-align: center&quot;&gt;4.9&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;其中非阻塞式用了10个mysql连接。连接数增加时，耗时更少，几乎成反比,直到到达数据库处理能力的极限，这时候再增加连接数就没有意义了。&lt;/p&gt;
+
+&lt;p&gt;使用非阻塞式确实能够加快数据库操作，但很显然non-blocking 显著增加了代码的复杂性，特别是对于一些查询类操作，如果使用非阻塞操作的话，势必要维护每一个数据库请求的上下文数据。 事实上可以通过增加线程数来解决这个问题，未必要使用non-blocking的API。
+ mariadb官网文档认为有以下使用场合：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;需要获取多个数据库的数据以进行下一步操作，用异步API可以使这些数据库请求并行化。&lt;/li&gt;
+  &lt;li&gt;原有的代码使用了libevent等非阻塞式的框架&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;由于同一个连接无法同时处理两个查询，因此不管是阻塞还是非阻塞，连接数增加才有可能提高TPS。 
+回到我开始提到的项目需求来说，由于我只是插入记录，而且几乎不会有插入失败的情形，因此几乎不用维护上下文,可以使用这种异步的方式来操作数据库。&lt;/p&gt;
+
+</description>
+        <pubDate>Thu, 26 Mar 2015 00:00:00 +0800</pubDate>
+        <link>http://chkpk.github.io/2015/03/26/mysql-async-connector.html</link>
+        <guid isPermaLink="true">http://chkpk.github.io/2015/03/26/mysql-async-connector.html</guid>
+        
+        <category>Database</category>
+        
+        <category>Mysql</category>
+        
+        <category>C/C++</category>
+        
+        
+      </item>
     
       <item>
         <title>mysql_store_result vs mysql_use_result</title>
