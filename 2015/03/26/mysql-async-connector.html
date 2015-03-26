@@ -73,7 +73,7 @@
 <p>mariadb提供了一个使用<a href="https://github.com/MariaDB/server/blob/10.1/tests/async_queries.c">异步API的demo</a>,里面结合了libevent,最主要的部分是异步操作状态机的实现，看着比较费解，
 我重新改写了，放在<a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c">这里</a>。</p>
 
-<p>以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 <a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c">blocking</a>,<a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c">non-blocking</a>):</p>
+<p>以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 <a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c">blocking</a>,<a href="https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c">non-blocking</a>):</p>
 
 <table>
   <thead>

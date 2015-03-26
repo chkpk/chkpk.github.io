@@ -6,8 +6,8 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 26 Mar 2015 22:46:54 +0800</pubDate>
-    <lastBuildDate>Thu, 26 Mar 2015 22:46:54 +0800</lastBuildDate>
+    <pubDate>Thu, 26 Mar 2015 23:22:43 +0800</pubDate>
+    <lastBuildDate>Thu, 26 Mar 2015 23:22:43 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
     
       <item>
@@ -23,7 +23,7 @@
 &lt;p&gt;mariadb提供了一个使用&lt;a href=&quot;https://github.com/MariaDB/server/blob/10.1/tests/async_queries.c&quot;&gt;异步API的demo&lt;/a&gt;,里面结合了libevent,最主要的部分是异步操作状态机的实现，看着比较费解，
 我重新改写了，放在&lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c&quot;&gt;这里&lt;/a&gt;。&lt;/p&gt;
 
-&lt;p&gt;以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 &lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c&quot;&gt;blocking&lt;/a&gt;,&lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c&quot;&gt;non-blocking&lt;/a&gt;):&lt;/p&gt;
+&lt;p&gt;以下是一些测试结果(被插入记录的表使用InnoDB存储引擎;mysql数据库在同一台主机上;测试代码见 &lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_example.c&quot;&gt;blocking&lt;/a&gt;,&lt;a href=&quot;https://github.com/chkpk/mysql-async-example/blob/master/mysql_async_example.c&quot;&gt;non-blocking&lt;/a&gt;):&lt;/p&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -144,7 +144,7 @@
   &lt;li&gt;mysql_query() :
     &lt;ul&gt;
       &lt;li&gt;client -&amp;gt; server : Request Query&lt;/li&gt;
-      &lt;li&gt;server -&amp;gt; client : Response  //包含部分查询的结果&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  //包含部分的查询结果&lt;/li&gt;
       &lt;li&gt;client -&amp;gt; server : TCP zero-window&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
@@ -157,7 +157,7 @@
     &lt;ul&gt;
       &lt;li&gt;一开始fetch处理 mysql_query 返回的结果，此时无网络IO，之后：&lt;/li&gt;
       &lt;li&gt;client -&amp;gt; server : non-zero-window  //client取走缓冲区数据，tcp连接的window恢复为非零&lt;/li&gt;
-      &lt;li&gt;server -&amp;gt; client : Response  //包含所有剩余查询的结果(如果还有的话）&lt;/li&gt;
+      &lt;li&gt;server -&amp;gt; client : Response  // 部分剩余的查询结果&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
   &lt;li&gt;musql_close():

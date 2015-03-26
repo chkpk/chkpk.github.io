@@ -119,7 +119,7 @@
   <li>mysql_query() :
     <ul>
       <li>client -&gt; server : Request Query</li>
-      <li>server -&gt; client : Response  //包含部分查询的结果</li>
+      <li>server -&gt; client : Response  //包含部分的查询结果</li>
       <li>client -&gt; server : TCP zero-window</li>
     </ul>
   </li>
@@ -132,7 +132,7 @@
     <ul>
       <li>一开始fetch处理 mysql_query 返回的结果，此时无网络IO，之后：</li>
       <li>client -&gt; server : non-zero-window  //client取走缓冲区数据，tcp连接的window恢复为非零</li>
-      <li>server -&gt; client : Response  //包含所有剩余查询的结果(如果还有的话）</li>
+      <li>server -&gt; client : Response  // 部分剩余的查询结果</li>
     </ul>
   </li>
   <li>musql_close():
