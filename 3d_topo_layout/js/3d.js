@@ -278,7 +278,6 @@ function onMouseDown(event) {
     mouseLastX = event.clientX;
     mouseLastY = event.clientY;
     
-    //console.log(b.box);
     info.clearRect(0, 0, 900, 550);
     if (event.button == 2 ) {
         if (spin)
@@ -287,7 +286,6 @@ function onMouseDown(event) {
             yRot = yRot1;
         lastTime = new Date().getTime();
         spin = !spin;
-        b.checkSpin.checked = spin;
     }else{
             
         var result = pickUp(event.clientX-10,event.clientY-34-25); 
@@ -298,10 +296,8 @@ function onMouseDown(event) {
             selected = result;
             if (!multi){
                 headLightNode(selected);
-                tree_select(nodes[selected].id);
             }else{
-                headLightMulti(result);
-                tree_select(nodes[selected].id);
+                //headLightMulti(result);
             }
         }else{
             if (spin)
@@ -315,29 +311,6 @@ function onMouseDown(event) {
             }
             
         }   
-    }
-}
-
-function onDoubleClick(event) { //打开局部EBGP图
-
-    event.preventDefault();
-    event.stopPropagation();
-    
-    var result = pickUp(event.clientX-10,event.clientY-34-25);
-    
-    if (result > -1 )
-        b.showLocalNetwork(result);
-    else{
-        selected = 0;
-        selectedMulti.length = 0;
-        headLightVertex.length = 0;
-        headLightColor.length = 0;
-        gl.deleteBuffer(headLightBuffer);
-        gl.deleteBuffer(headLightColorBuffer);
-        b.box.clear();          
-        asNumText.length = 0;
-        asNumTextColor.length = 0;
-        b.box.countNode = 0;
     }
 }
 
@@ -442,8 +415,8 @@ function to3d(mat,x,y,index){
 //=========pick node ========
 function pickUp(x,y){
 
-    x += b.network.getView().scrollLeft;
-    y += b.network.getView().scrollTop;
+    x += 5;
+    y += 53;
     
     var result = -1;
     var vec  = new okVec4();
@@ -571,12 +544,10 @@ function headLightNode(index){
     headLightColor.length = 0;
     gl.deleteBuffer(headLightBuffer);
     gl.deleteBuffer(headLightColorBuffer);
-    b.box.clear();
     
     asNumText.length = 0;
     asNumTextColor.length = 0;
     
-    b.addNode(index);
     asNumText.push(index);
     //asNumTextColor.push("yellow");
     asNumTextColor.push("CENTRAL_NODE_TEXT_COLOR");
@@ -589,9 +560,6 @@ function headLightNode(index){
         if (!nodeFilter(peer)) 
             continue;
             
-        b.addNode(peer);
-        b.addLink(index,peer,{prefixs:nodes[index].fromClients[i].prefixs});
-        
         //addHeadLight(index,peer,"red","green");
         addHeadLight(index,peer,"FROM_NODE_COLOR","TO_NODE_COLOR");
         
@@ -611,9 +579,6 @@ function headLightNode(index){
         if (!nodeFilter(peer)) 
             continue;
             
-        b.addNode(peer);
-        b.addLink(peer,index,{prefixs:nodes[index].toClients[i].prefixs});
-        
         //addHeadLight(index,peer,"green","red");
         addHeadLight(index,peer,"TO_NODE_COLOR","FROM_NODE_COLOR");
     
@@ -632,9 +597,6 @@ function headLightNode(index){
     
     gl.deleteBuffer(headLightBuffer);
     gl.deleteBuffer(headLightColorBuffer);
-    
-    b.box.count = nodes[index].l+1;
-    b.infoElement.setClient("totalSelected", b.box.count );
     
     headLightBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, headLightBuffer);
@@ -659,7 +621,6 @@ function headLightLink(from,to){
     headLightColor.length = 0;
     gl.deleteBuffer(headLightBuffer);
     gl.deleteBuffer(headLightColorBuffer);
-    b.box.clear();
     
     asNumText.length = 0;
     asNumTextColor.length = 0;
@@ -667,86 +628,14 @@ function headLightLink(from,to){
     //addHeadLight(from,to,"red","green");
     addHeadLight(from,to,"FROM_NODE_COLOR","TO_NODE_COLOR");
     
-    b.addNode(from);
     asNumText.push(from);
     //asNumTextColor.push("red");
     asNumTextColor.push("FROM_TEXT_COLOR");
     
-    b.addNode(to);
     asNumText.push(to);
     //asNumTextColor.push("green");
     asNumTextColor.push("TO_TEXT_COLOR");
     
-    for(var i = 0, l = nodes[from].lf,links = nodes[from].fromLinks; i < l; i++){
-        
-        if (links[i] == to){
-            b.addLink(from,to,{prefixs:nodes[from].fromClients[i].prefixs});
-            break;
-        }
-    }
-    /*
-    for(var i = 0, l = nodes[to].lt,links = nodes[to].toLinks; i < l; i++){
-        
-        if (links[i] == from){
-            b.addLink(to,links[i],{prefixs:nodes[to].toClients[i].prefixs});
-            break;
-        }
-    }*/
-    
-    b.box.count = 2;
-    b.infoElement.setClient("totalSelected", b.box.count );
-
-    headLightBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, headLightBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(headLightVertex), gl.STATIC_DRAW);
-    headLightBuffer.itemSize = 3;
-    headLightBuffer.numItems = headLightVertex.length /3;
-        
-    headLightColorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, headLightColorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(headLightColor), gl.STATIC_DRAW);
-    headLightColorBuffer.itemSize = 4;
-    headLightColorBuffer.numItems = headLightColor.length / 4;
-}
-
-//=====prepare headlight data for the selected nodes========= 
-function headLightMulti(index){
-    
-    if (!nodeFilter(index))
-        return;
-        
-    if (b.box.getDataById(nodes[index].id))
-        return;
-        
-    selectedMulti.push(index);  
-    b.addNode(index);
-    asNumText.push(index);
-    asNumTextColor.push("MULTI_COLOR");
-    
-    for(var i = 0, l = nodes[index].lf,links = nodes[index].fromLinks; i < l; i++){
-        
-        var peer = links[i];
-        if (b.box.getDataById(nodes[peer].id)){
-            b.addLink(index,peer,{prefixs:nodes[index].fromClients[i].prefixs});
-            addHeadLight(index,peer,"MULTI_COLOR","MULTI_COLOR");       
-        }
-    }
-    
-    for(var i = 0, l = nodes[index].lt,links = nodes[index].toLinks; i < l; i++){
-    
-        var peer = links[i];
-        if (b.box.getDataById(nodes[peer].id)){
-            b.addLink(peer,index,{prefixs:nodes[index].toClients[i].prefixs});
-            addHeadLight(index,peer,"MULTI_COLOR","MULTI_COLOR");
-        }
-    }
-    
-    b.box.count = selectedMulti.length;
-    b.infoElement.setClient("totalSelected", b.box.count );
-
-    gl.deleteBuffer(headLightBuffer);
-    gl.deleteBuffer(headLightColorBuffer);
-            
     headLightBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, headLightBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(headLightVertex), gl.STATIC_DRAW);
@@ -784,20 +673,63 @@ function modify(index, v){
 }
 
 //==========sync the selection between 3d topo and the twaver tree ======
-function tree_select(id){
-    var node = b.tree.getDataBox().getDataById(id);
-    b.tree.getSelectionModel().setSelection(node);
-}
-
 function clearSelected(){
     selectedMulti = [];
     headLightVertex.length = 0;
     headLightColor.length = 0;
     gl.deleteBuffer(headLightBuffer);
     gl.deleteBuffer(headLightColorBuffer);
-    b.box.clear();          
     asNumText.length = 0;
     asNumTextColor.length = 0;
+}
+
+function initMouseEvent(){
+  var textLayer = textCanvas;
+  textLayer.onmousedown = onMouseDown;
+  //textLayer.ondblclick = onDoubleClick;
+  textLayer.onmouseup = onMouseUp;
+  textLayer.onmousemove = onMouseMove;
+  textLayer.onmousewheel= onMouseWheel;
+  textLayer.onDOMMouseScroll = onMouseWheel;
+  textLayer.addEventListener( 'mousewheel', onMouseWheel, false );
+  textLayer.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
+}
+
+function filterChanged(obj){
+  linkFilter = parseInt(obj.value);
+  console.log(linkFilter);
+  window.cancelAnimationFrame(requestId);
+  //clearSelected();
+  clearAll("filter");
+  initBuffers();  
+  loadBuffer();
+  setTimeout(function(){  
+      tick()
+      },100);
+}
+
+function initWebGl() {
+	  edgeCanvas = document.getElementById("can"); 
+    edgeCanvas.style.position = 'absolute';
+    //获取webgl Context
+    try {
+      gl = edgeCanvas.getContext("experimental-webgl");
+      gl.viewportWidth =  edgeCanvas.width;
+      gl.viewportHeight = edgeCanvas.height;
+    } catch (e) {
+    }
+    if (!gl) {
+      alert("Could not initialise WebGL, sorry :-(");
+    }
+	
+    //添加透明的 text canvas，用来显示文字信息
+    textCanvas = document.getElementById("text"); 
+    textCanvas.style.position = 'absolute';
+
+    info = textCanvas.getContext('2d');
+    info.font="12pt Calibri";
+    info.textAlign="central";
+    info.fillStyle="#ff0000";
 }
 
 // ======= read topology data =======
@@ -815,8 +747,8 @@ function readEdgeFromServer(datas){
         vColors = { 
                 CENTRAL_NODE_TEXT_COLOR:    [1.0,1.0,0.0,alpha],
                 FROM_NODE_COLOR:            [1.0,0.0,0.0,alpha],
-                TO_NODE_COLOR:              [0.0,1.0,0.0,alpha],
-                FROM_TEXT_COLOR:            [1.0,0.0,0.0,alpha],
+                TO_NODE_COLOR:              [1.0,0.0,0.0,alpha],
+                FROM_TEXT_COLOR:            [0.0,1.0,0.0,alpha],
                 TO_TEXT_COLOR:              [0.0,1.0,0.0,alpha],
                 MULTI_COLOR:                [0.0,1.0,1.0,alpha],
               };
@@ -824,8 +756,8 @@ function readEdgeFromServer(datas){
         sColors = { 
                 CENTRAL_NODE_TEXT_COLOR:    "#ffff00",
                 FROM_NODE_COLOR:            "#ff0000",
-                TO_NODE_COLOR:              "#00ff00",
-                FROM_TEXT_COLOR:            "#ff0000",
+                TO_NODE_COLOR:              "#ff0000",
+                FROM_TEXT_COLOR:            "#00ff00",
                 TO_TEXT_COLOR:              "#00ff00",
                 MULTI_COLOR:                "#00ffff",
             };
@@ -1169,10 +1101,6 @@ function initBuffers(){
     
     //console.log("node:"+total_n);
     //console.log("link:" +total_l);
-    
-    b.infoElement.setClient("updateTime", Date());
-    b.infoElement.setClient("totalNodes", total_n);
-    b.infoElement.setClient("totalLinks", total_l);
 }
 
 // =====load reder buffer======

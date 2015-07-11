@@ -102,23 +102,39 @@
                 vColor = aVertexColor;
             }
         </script>
+
+        <style type="text/css">
+          div#filter{float:right}
+        </style>
     
     </head>
     
     <body>
-        <div id="main">
-          <img src='images/loading.gif' class="loading">
-        </div>
+        <div id="main"> <img src='images/loading.gif' class="loading"> </div>
         <div>
-            <canvas id = "can" width = "900" height = "550" onContextMenu = "return false"> </canvas>
-            <canvas id  = "text" width = "900" height = "550" onContextMenu = "return false"> </canvas>
+          <canvas id = "can" width = "900" height = "550" onContextMenu = "return false"> </canvas>
+          <canvas id  = "text" width = "900" height = "550" onContextMenu = "return false"> </canvas>
         </div>
+        <div id="filter"> 
+          <label>操作说明:</label><br/>
+          <label>1.单击左键选中节点</label><br/>
+          <label>2.单击右键停止/开始旋转</label><br/>
+          <label>3.停止旋转后可按住左键拖拽视角或节点</label><br/>
+          <label>4.滚轮前进/后退观察点</label><br/>
+          <label>5.按连接数过滤节点:</label>
+          <select name="按连接数过滤" onchange="filterChanged(this)">
+            <option value="1">1</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+          </select>
+        </div>
+
         <!--div id="colorSelector"><div style="background-color: #0000ff"></div--></div>
 
-        <script type="text/javascript" src="js/twaver.js"></script>
         <script type="text/javascript" src="js/jquery.js"></script>
-        <script type="text/javascript" src="js/bgp.js"></script>
-        <script type="text/javascript" src="js/util.js"></script>   
         <script type="text/javascript" src="js/Oak3D_v_0_5_4.js"></script>
         <script type="text/javascript" src="js/3d.js"></script>
         <script type="text/javascript" src="js/ajaxdata_new.js"></script>
@@ -128,20 +144,12 @@
           $(document).ready(function(){
             time00 = new Date().getTime();
             console.log("document ready: "+(new Date().getTime()-time00)/1000+'s');
-            b = new bgp.Bgp();
-            b.registerImages();
+            initWebGl();
             
             setTimeout(function(){
                 time1 =  new Date().getTime();
-              //$.getJSON("view_as_topo2.php" + location.search, function(data){
                 data = ajaxdata;
                 $("#main").children().remove();
-                
-                //for (key in data["time"])
-                //    console.log(key + ": " + data["time"][key] + "s");
-                //console.log("ajax_data: "+(new Date().getTime()-time1)/1000+'s');
-                
-                b.init();
                 webGLStart();
                 time2 =  new Date().getTime();
                 //console.log(JSON.stringify(data));
@@ -153,8 +161,7 @@
                 console.log("init & load buffer time: "+(new Date().getTime()-timel)/1000+'s');
                 
                 setTimeout(function(){
-                    b.initMouseEvent();
-                    b.initInfo();
+                    initMouseEvent();
                     tick();
                     console.log("webGL showdata: "+(new Date().getTime()-time2)/1000+'s');
                     console.log("total: "+(new Date().getTime()-time00)/1000+'s');

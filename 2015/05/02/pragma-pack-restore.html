@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>3d topo layout</title>
-  <meta name="description" content="已知无向连通拓图（G,E)，给G的每个元素计算出一个3维坐标，达到以下目标：">
+  <title>pragma pack restore</title>
+  <meta name="description" content="在C/C++头文件中使用pragma pack修改了字节对齐的时候，如果没有恢复，会对包含该头文件的所有文件起作用，带来不可预料的后果。">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://chkpk.github.io/2015/03/17/3d-topo-layout.html">
+  <link rel="canonical" href="http://chkpk.github.io/2015/05/02/pragma-pack-restore.html">
   <link rel="alternate" type="application/rss+xml" title="记录" href="http://chkpk.github.io/feed.xml" />
 </head>
 
@@ -57,44 +57,44 @@
         <div class="post">
 
   <header class="post-header">
-    <h1 class="post-title">3d topo layout</h1>
-    <p class="post-meta">Mar 17, 2015</p>
+    <h1 class="post-title">pragma pack restore</h1>
+    <p class="post-meta">May 2, 2015</p>
   </header>
 
   <article class="post-content">
-    <p>已知无向连通拓图（G,E)，给G的每个元素计算出一个3维坐标，达到以下目标：</p>
+    <p>在C/C++头文件中使用pragma pack修改了字节对齐的时候，如果没有恢复，会对包含该头文件的所有文件起作用，带来不可预料的后果。</p>
 
-<ol>
-  <li>有无向边连接的节点在3维空间中尽量靠近</li>
-  <li>所有节点在空间中分布尽量均匀</li>
-</ol>
+<p>例如，在头文件 packed.h 中某处 加入 #pragma pack(1),
+另有A.h  B.h, 对应的实现文件为 A.cpp, B.cpp.</p>
 
-<p>大部分算法是基于重力-引力模型，通过不断迭代得到每个节点的坐标。最大问题是迭代时间长。</p>
+<p>A.h:</p>
 
-<p>看了很多文献，有一个算法比较特别，时间复杂度可认为是<code>O(n)</code>.
-详见 <a href="http://www.emis.de/journals/JGAA/accepted/2004/HarelKoren2004.8.2.pdf">《Graph Drawing by High-Dimensional Embedding》</a></p>
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &quot;packed.h&quot;  </span><span class="c1">// contains #pragma pack(1)</span>
+<span class="cp">#include &quot;B.h&quot;</span>
 
-<p>算法整体描述：</p>
+<span class="n">class</span> <span class="n">A</span><span class="p">{</span>
+<span class="p">...</span>
+<span class="nl">private</span><span class="p">:</span>
+  <span class="n">B</span> <span class="n">b</span><span class="p">;</span>
+  <span class="n">C</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
 
-<ol>
-  <li>在G中选出若干节点，称“核心节点”，其集合为“核心节点集合”，记为C，设C的大小为N</li>
-  <li>对每个核心节点，以之为根，广度优先遍历G，得到G中每个节点到各个核心节点的跳数（共N个），组成该节点的N维空间坐标向量</li>
-  <li>运用主成分分析法（PCA）将每个节点的坐标向量从N维降为3维，得到每个节点的3维坐标</li>
-</ol>
+<p>在B.h中未 include “packed.h”</p>
 
-<p>坐标节点的选取：</p>
+<p>此时，B 在A中占据的内存大小实际小于 B.cpp中B的大小(被packed.h的字节对齐设置影响),
+那么，A.cpp调用 B的成员函数时，B的成员函数可能会修改A中B所占内存之外的空间，
+在上面这个例子中，也就是可能把C c的内存区域给修改了。</p>
 
-<ol>
-  <li>选取连接数最多的节点u1作为第1个核心节点，加入C</li>
-  <li>对G-C中的节点u，定义u到C的距离为u到C中已有节点的距离的最小值</li>
-  <li>将当前G-C中与C距离最远的节点作为下一个核心节点加入C，更新G-C所有节点到C的距离</li>
-  <li>将3重复N-1次，一共得到N个核心节点. N大小取50足够.</li>
-</ol>
+<p>因此，在使用 #pragma pack(n)时，要注意恢复原来的字节对齐设置，具体做法：</p>
 
-<p>主成分分析法降维过程中也用了迭代，不过经实际运行发现迭代次数较少。</p>
+<p>packed.h:</p>
 
-<p>算法实现起来不难， C代码大概400行。 上万节点的拓扑图，运行时间基本在5秒以内。
-效果见<a href="/3d_topo_layout/index.html">3d_topo_layout_demo</a>。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。</p>
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#pragma pack(push)</span>
+<span class="cp">#pragma pack(1)</span>
+<span class="p">...</span>
+<span class="c1">// restore</span>
+<span class="cp">#pragma pack(pop)</span>
+<span class="cp">#endif </span><span class="cm">/* of packed.h */</span><span class="cp"></span></code></pre></div>
 
 
   </article>

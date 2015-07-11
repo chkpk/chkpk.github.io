@@ -6,9 +6,55 @@
 </description>
     <link>http://chkpk.github.io/</link>
     <atom:link href="http://chkpk.github.io/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 26 Mar 2015 23:22:43 +0800</pubDate>
-    <lastBuildDate>Thu, 26 Mar 2015 23:22:43 +0800</lastBuildDate>
+    <pubDate>Sat, 11 Jul 2015 15:40:06 +0800</pubDate>
+    <lastBuildDate>Sat, 11 Jul 2015 15:40:06 +0800</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>pragma pack restore</title>
+        <description>&lt;p&gt;在C/C++头文件中使用pragma pack修改了字节对齐的时候，如果没有恢复，会对包含该头文件的所有文件起作用，带来不可预料的后果。&lt;/p&gt;
+
+&lt;p&gt;例如，在头文件 packed.h 中某处 加入 #pragma pack(1),
+另有A.h  B.h, 对应的实现文件为 A.cpp, B.cpp.&lt;/p&gt;
+
+&lt;p&gt;A.h:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#include &amp;quot;packed.h&amp;quot;  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;// contains #pragma pack(1)&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#include &amp;quot;B.h&amp;quot;&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
+&lt;span class=&quot;nl&quot;&gt;private&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;B&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;C&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;在B.h中未 include “packed.h”&lt;/p&gt;
+
+&lt;p&gt;此时，B 在A中占据的内存大小实际小于 B.cpp中B的大小(被packed.h的字节对齐设置影响),
+那么，A.cpp调用 B的成员函数时，B的成员函数可能会修改A中B所占内存之外的空间，
+在上面这个例子中，也就是可能把C c的内存区域给修改了。&lt;/p&gt;
+
+&lt;p&gt;因此，在使用 #pragma pack(n)时，要注意恢复原来的字节对齐设置，具体做法：&lt;/p&gt;
+
+&lt;p&gt;packed.h:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-c&quot; data-lang=&quot;c&quot;&gt;&lt;span class=&quot;cp&quot;&gt;#pragma pack(push)&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#pragma pack(1)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
+&lt;span class=&quot;c1&quot;&gt;// restore&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#pragma pack(pop)&lt;/span&gt;
+&lt;span class=&quot;cp&quot;&gt;#endif &lt;/span&gt;&lt;span class=&quot;cm&quot;&gt;/* of packed.h */&lt;/span&gt;&lt;span class=&quot;cp&quot;&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+</description>
+        <pubDate>Sat, 02 May 2015 23:18:00 +0800</pubDate>
+        <link>http://chkpk.github.io/2015/05/02/pragma-pack-restore.html</link>
+        <guid isPermaLink="true">http://chkpk.github.io/2015/05/02/pragma-pack-restore.html</guid>
+        
+        <category>C/C++</category>
+        
+        
+      </item>
     
       <item>
         <title>mysql async connector</title>
@@ -56,18 +102,21 @@
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;其中非阻塞式用了10个mysql连接。连接数增加时，耗时更少，几乎成反比,直到到达数据库处理能力的极限，这时候再增加连接数就没有意义了。&lt;/p&gt;
+&lt;p&gt;其中非阻塞式用了10个mysql连接。连接数增加时，耗时更少，几乎成反比(直到到达数据库处理能力的极限).&lt;/p&gt;
 
-&lt;p&gt;使用非阻塞式确实能够加快数据库操作，但很显然non-blocking 显著增加了代码的复杂性，特别是对于一些查询类操作，如果使用非阻塞操作的话，势必要维护每一个数据库请求的上下文数据。 事实上可以通过增加线程数来解决这个问题，未必要使用non-blocking的API。
- mariadb官网文档认为有以下使用场合：&lt;/p&gt;
+&lt;p&gt;使用非阻塞式确实能够加快数据库操作，但存在问题:代码的复杂性增加了，特别是对于一些查询类操作，如果使用非阻塞操作的话，势必要维护每一个数据库请求的上下文数据. 很多情况下也可以通过使用阻塞式API但增加线程数(也即是数据库连接数）来解决这个问题，未必要使用非阻塞的API。&lt;/p&gt;
+
+&lt;p&gt;mariadb官网文档认为有以下场合比较适合使用非阻塞式API：&lt;/p&gt;
 
 &lt;ul&gt;
   &lt;li&gt;需要获取多个数据库的数据以进行下一步操作，用异步API可以使这些数据库请求并行化。&lt;/li&gt;
   &lt;li&gt;原有的代码使用了libevent等非阻塞式的框架&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;由于同一个连接无法同时处理两个查询，因此不管是阻塞还是非阻塞，连接数增加才有可能提高TPS。 
-回到我开始提到的项目需求来说，由于我只是插入记录，而且几乎不会有插入失败的情形，因此几乎不用维护上下文,可以使用这种异步的方式来操作数据库。&lt;/p&gt;
+&lt;p&gt;由于同一个连接无法同时处理多个查询，因此不管是阻塞还是非阻塞，连接数增加才有可能提高TPS。 
+  当然，数据库的处理能力才是最根本的限制,在数据库处理能力内，可以通过选择合适的连接数来使数据库的能力达到最大值.但数据库处理能力跟不上的话，无论是阻塞式还是非阻塞,增加连接数也无法提高吞吐量。&lt;/p&gt;
+
+&lt;p&gt;回到我开始提到的需求来说，由于我只是插入记录，而且几乎不会有插入失败的情形，因此几乎不用维护上下文,可以使用这种异步的方式来操作数据库，既提高了处理速率，又不会产生太多的线程资源。&lt;/p&gt;
 
 &lt;p&gt;使用过程中发现mariadb-connect-c中，mysql连接关闭时没有清理使用异步mysql而额外申请的内存，顺便提了个pull request。&lt;/p&gt;
 
@@ -405,7 +454,7 @@
 &lt;p&gt;主成分分析法降维过程中也用了迭代，不过经实际运行发现迭代次数较少。&lt;/p&gt;
 
 &lt;p&gt;算法实现起来不难， C代码大概400行。 上万节点的拓扑图，运行时间基本在5秒以内。
-效果见&lt;a href=&quot;/3d_topo_layout/3d_topo_layout_demo.html&quot;&gt;3d_topo_layout_demo&lt;/a&gt;。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。&lt;/p&gt;
+效果见&lt;a href=&quot;/3d_topo_layout/index.html&quot;&gt;3d_topo_layout_demo&lt;/a&gt;。 用了WebGl来画的3D拓扑图。为了便于显示效果，节点只有300个。&lt;/p&gt;
 
 </description>
         <pubDate>Tue, 17 Mar 2015 23:18:00 +0800</pubDate>
